@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="glass-panel">
+    <h3 class="mb-4">Edit Task</h3>
+    
+    <form action="{{ url_for('tasks.update_task', id=task.id) }}" method="POST" class="d-flex flex-column gap-4">
+        
+        <!-- Title Input -->
+        <div>
+            <label class="form-label text-secondary mb-1">Task Title</label>
+            <input type="text" name="title" class="form-control form-control-lg" value="{{ task.title }}" required autocomplete="off">
+        </div>
+        
+        <!-- Due Date Input -->
+        <div>
+            <label class="form-label text-secondary mb-1">Due Date</label>
+            <input type="date" name="due_date" class="form-control" value="{{ task.due_date if task.due_date else '' }}">
+        </div>
+
+        <!-- Status Selection -->
+        <div>
+            <label class="form-label text-secondary mb-1">Status</label>
+            <select name="status" class="form-select">
+                <option value="pending" {% if task.status == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="completed" {% if task.status == 'completed' %}selected{% endif %}>Completed</option>
+            </select>
+        </div>
+
+        <!-- Submit & Cancel -->
+        <div class="d-flex gap-3 mt-3">
+            <button type="submit" class="btn-custom px-4 w-100">Save Changes</button>
+            <a href="{{ url_for('tasks.index') }}" class="btn btn-outline-light px-4 d-flex align-items-center">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}
