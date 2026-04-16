@@ -1,0 +1,19 @@
+# 環境變數
+.env
+
+# 虛擬環境
+.venv/
+env/
+venv/
+
+# SQLite 資料庫 (根據架構，存在於 instance 內)
+instance/
+*.db
+
+# Python 快取
+__pycache__/
+*.pyc
+
+# 編輯器與作業系統設定檔
+.vscode/
+.DS_Store
