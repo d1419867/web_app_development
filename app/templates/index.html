@@ -1,76 +1,86 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
 {% block content %}
-<!-- Create Task Form -->
-<div class="glass-panel mb-5">
-    <h3 class="mb-4">Create New Task</h3>
-    <form action="{{ url_for('tasks.create_task') }}" method="POST" class="d-flex flex-column gap-3">
-        <div>
-            <input type="text" name="title" class="form-control form-control-lg" placeholder="What needs to be done?" required autocomplete="off">
-        </div>
-        <div class="d-flex justify-content-between align-items-center">
-            <div class="w-50">
-                <input type="date" name="due_date" class="form-control">
-            </div>
-            <button type="submit" class="btn-custom">Add Task</button>
-        </div>
-    </form>
-</div>
-
-<!-- Task Filter & List -->
-<div class="glass-panel">
-    <!-- Filter Nav -->
-    <ul class="nav nav-pills mb-4">
-        <li class="nav-item">
-            <a class="nav-link {% if not current_status %}active{% endif %}" href="{{ url_for('tasks.index') }}">All</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {% if current_status == 'pending' %}active{% endif %}" href="{{ url_for('tasks.index', status='pending') }}">Pending</a>
-        </li>
-        <li class="nav-item">
-            <a class="nav-link {% if current_status == 'completed' %}active{% endif %}" href="{{ url_for('tasks.index', status='completed') }}">Completed</a>
-        </li>
-    </ul>
-
-    <!-- Task Items -->
-    <ul class="task-list mt-3">
-    {% for task in tasks %}
-        <!-- add 'completed' class to row if task is done -->
-        <li class="task-item {% if task.status == 'completed' %}completed{% endif %}">
-            
-            <!-- Toggle Form -->
-            <form action="{{ url_for('tasks.toggle_task_status', id=task.id) }}" method="POST" class="task-toggle m-0">
-                <button type="submit" title="Mark complete or incomplete"></button>
-            </form>
-
-            <div class="task-details">
-                <p class="task-title">{{ task.title }}</p>
-                <div class="d-flex align-items-center gap-2 mt-1">
-                    {% if task.due_date %}
-                        <!-- SVG icon for calendar -->
-                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="currentColor" class="text-secondary" viewBox="0 0 16 16">
-                          <path d="M14 2h-1V1a1 1 0 0 0-2 0v1H5V1a1 1 0 0 0-2 0v1H2a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2zM2 3h12a1 1 0 0 1 1 1v2H1V4a1 1 0 0 1 1-1zm12 11H2a1 1 0 0 1-1-1V7h14v6a1 1 0 0 1-1 1z"/>
-                        </svg>
-                        <p class="task-meta">{{ task.due_date }}</p>
-                    {% else %}
-                        <p class="task-meta">No due date.</p>
-                    {% endif %}
+<div class="row mb-5 text-center">
+    <div class="col-12">
+        <div class="glass-card p-5">
+            <h5 class="text-uppercase text-muted mb-2" style="letter-spacing: 2px;">當前總餘額</h5>
+            <div class="balance-amount mb-4">NT$ {{ "{:,.0f}".format(balance) }}</div>
+            <div class="row mt-4">
+                <div class="col-6 border-end border-secondary border-opacity-25">
+                    <p class="text-muted mb-1">總收入</p>
+                    <h4 class="text-income mb-0"><i class="fa-solid fa-arrow-trend-up me-2"></i>NT$ {{ "{:,.0f}".format(total_income) }}</h4>
+                </div>
+                <div class="col-6">
+                    <p class="text-muted mb-1">總支出</p>
+                    <h4 class="text-expense mb-0"><i class="fa-solid fa-arrow-trend-down me-2"></i>NT$ {{ "{:,.0f}".format(total_expense) }}</h4>
                 </div>
             </div>
-
-            <!-- Actions -->
-            <div class="task-actions d-flex gap-2">
-                <a href="{{ url_for('tasks.edit_task', id=task.id) }}" class="btn btn-sm btn-outline-light rounded text-decoration-none">Edit</a>
-                <form action="{{ url_for('tasks.delete_task', id=task.id) }}" method="POST" class="m-0" onsubmit="return confirm('Delete this task?');">
-                    <button type="submit" class="btn btn-sm btn-danger-custom">Delete</button>
-                </form>
-            </div>
-        </li>
-    {% else %}
-        <div class="text-center text-secondary py-4">
-            <p>No tasks found.</p>
         </div>
-    {% endfor %}
-    </ul>
+    </div>
+</div>
+
+<div class="row mb-4 align-items-center">
+    <div class="col-6">
+        <h3 class="fw-bold mb-0">歷史明細</h3>
+    </div>
+    <div class="col-6 text-end">
+        <a href="{{ url_for('main.new_record') }}" class="btn btn-custom-primary">
+            <i class="fa-solid fa-plus me-2"></i>新增紀錄
+        </a>
+    </div>
+</div>
+
+<div class="glass-card p-4">
+    <div class="table-responsive">
+        <table class="table table-hover table-dark mb-0">
+            <thead>
+                <tr>
+                    <th class="py-3">日期</th>
+                    <th class="py-3">類型</th>
+                    <th class="py-3">分類</th>
+                    <th class="py-3">金額</th>
+                    <th class="py-3">備註</th>
+                    <th class="py-3 text-end">操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr>
+                    <td class="py-3">{{ record.date }}</td>
+                    <td class="py-3">
+                        {% if record.type == 'income' %}
+                            <span class="badge bg-success bg-opacity-25 text-success rounded-pill px-3 py-2">收入</span>
+                        {% else %}
+                            <span class="badge bg-danger bg-opacity-25 text-danger rounded-pill px-3 py-2">支出</span>
+                        {% endif %}
+                    </td>
+                    <td class="py-3">{{ record.category }}</td>
+                    <td class="py-3 fw-bold {% if record.type == 'income' %}text-income{% else %}text-expense{% endif %}">
+                        {% if record.type == 'income' %}+{% else %}-{% endif %}NT$ {{ "{:,.0f}".format(record.amount) }}
+                    </td>
+                    <td class="py-3 text-muted">{{ record.description }}</td>
+                    <td class="py-3 text-end">
+                        <a href="{{ url_for('main.edit_record', id=record.id) }}" class="btn btn-sm btn-outline-light rounded-pill px-3 me-2">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+                        <form action="{{ url_for('main.delete_record', id=record.id) }}" method="POST" class="d-inline" onsubmit="return confirm('確定要刪除這筆紀錄嗎？資料將無法復原。');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <i class="fa-regular fa-folder-open fa-3x mb-3 opacity-50"></i>
+                        <p>目前還沒有任何紀錄喔！趕快來新增第一筆吧！</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

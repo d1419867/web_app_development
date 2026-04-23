@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row mb-4 align-items-center">
+    <div class="col-12 text-center">
+        <h3 class="fw-bold mb-0">支出分類統計</h3>
+        <p class="text-muted mt-2">找出你的金錢都流向何處</p>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-10 col-lg-8">
+        <div class="glass-card p-5">
+            {% if category_totals %}
+                <div style="position: relative; height:400px; width:100%">
+                    <canvas id="expenseChart"></canvas>
+                </div>
+            {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fa-solid fa-chart-pie fa-3x mb-3 opacity-50"></i>
+                    <p>目前還沒有任何支出紀錄可以產生圖表喔！</p>
+                    <a href="{{ url_for('main.new_record') }}" class="btn btn-custom-primary mt-3">去新增紀錄</a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% if category_totals %}
+<!-- 載入 Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    const ctx = document.getElementById('expenseChart');
+    const data = {
+        labels: [{% for cat in category_totals.keys() %}'{{ cat }}',{% endfor %}],
+        datasets: [{
+            data: [{% for total in category_totals.values() %}{{ total }},{% endfor %}],
+            backgroundColor: [
+                'rgba(79, 172, 254, 0.8)',   /* Blue */
+                'rgba(245, 87, 108, 0.8)',  /* Red/Pink */
+                'rgba(250, 204, 21, 0.8)',  /* Yellow */
+                'rgba(74, 222, 128, 0.8)',  /* Green */
+                'rgba(168, 85, 247, 0.8)',  /* Purple */
+                'rgba(251, 146, 60, 0.8)'   /* Orange */
+            ],
+            borderColor: 'rgba(21, 21, 32, 1)',
+            borderWidth: 2,
+            hoverOffset: 10
+        }]
+    };
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: '#cbd5e1',
+                        padding: 20,
+                        font: {
+                            family: "'Inter', sans-serif",
+                            size: 14
+                        }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleFont: { family: "'Inter', sans-serif" },
+                    bodyFont: { family: "'Inter', sans-serif", size: 14 },
+                    padding: 15,
+                    callbacks: {
+                        label: function(context) {
+                            let label = context.label || '';
+                            if (label) { label += ': '; }
+                            if (context.parsed !== null) {
+                                label += 'NT$ ' + new Intl.NumberFormat().format(context.parsed);
+                            }
+                            return label;
+                        }
+                    }
+                }
+            },
+            cutout: '70%'
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}
