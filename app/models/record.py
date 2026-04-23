@@ -1,5 +1,6 @@
 import sqlite3
 import datetime
+import traceback
 from pathlib import Path
 
 # 根據架構設計，資料庫存放在 instance/database.db
@@ -21,79 +22,108 @@ class RecordModel:
     @staticmethod
     def init_db():
         """初始化資料庫：讀取 schema.sql 並建立資料表"""
-        schema_path = BASE_DIR / "database" / "schema.sql"
-        if schema_path.exists():
-            with open(schema_path, "r", encoding="utf-8") as f:
-                schema_sql = f.read()
-            conn = get_db_connection()
-            conn.executescript(schema_sql)
-            conn.commit()
-            conn.close()
+        try:
+            schema_path = BASE_DIR / "database" / "schema.sql"
+            if schema_path.exists():
+                with open(schema_path, "r", encoding="utf-8") as f:
+                    schema_sql = f.read()
+                conn = get_db_connection()
+                conn.executescript(schema_sql)
+                conn.commit()
+                conn.close()
+        except Exception as e:
+            print(f"init_db 發生錯誤: {e}")
+            traceback.print_exc()
 
     @staticmethod
     def create(record_type, amount, category, date, description=""):
         """新增一筆收支紀錄"""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        now_iso = datetime.datetime.now().isoformat()
-        
-        cursor.execute(
-            """
-            INSERT INTO records (type, amount, category, date, description, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            """,
-            (record_type, amount, category, date, description, now_iso)
-        )
-        conn.commit()
-        record_id = cursor.lastrowid
-        conn.close()
-        return record_id
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            now_iso = datetime.datetime.now().isoformat()
+            
+            cursor.execute(
+                """
+                INSERT INTO records (type, amount, category, date, description, created_at)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (record_type, amount, category, date, description, now_iso)
+            )
+            conn.commit()
+            record_id = cursor.lastrowid
+            conn.close()
+            return record_id
+        except Exception as e:
+            print(f"create 發生錯誤: {e}")
+            traceback.print_exc()
+            return None
 
     @staticmethod
     def get_all():
         """取得所有收支紀錄（依據日期從新到舊排序）"""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM records ORDER BY date DESC, created_at DESC")
-        rows = cursor.fetchall()
-        conn.close()
-        return [dict(row) for row in rows]
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM records ORDER BY date DESC, created_at DESC")
+            rows = cursor.fetchall()
+            conn.close()
+            return [dict(row) for row in rows]
+        except Exception as e:
+            print(f"get_all 發生錯誤: {e}")
+            traceback.print_exc()
+            return []
 
     @staticmethod
     def get_by_id(record_id):
         """根據 ID 取得單筆收支紀錄"""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM records WHERE id = ?", (record_id,))
-        row = cursor.fetchone()
-        conn.close()
-        return dict(row) if row else None
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM records WHERE id = ?", (record_id,))
+            row = cursor.fetchone()
+            conn.close()
+            return dict(row) if row else None
+        except Exception as e:
+            print(f"get_by_id 發生錯誤: {e}")
+            traceback.print_exc()
+            return None
 
     @staticmethod
     def update(record_id, record_type, amount, category, date, description=""):
         """更新特定 ID 的收支紀錄"""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute(
-            """
-            UPDATE records 
-            SET type = ?, amount = ?, category = ?, date = ?, description = ?
-            WHERE id = ?
-            """,
-            (record_type, amount, category, date, description, record_id)
-        )
-        conn.commit()
-        success = cursor.rowcount > 0
-        conn.close()
-        return success
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                UPDATE records 
+                SET type = ?, amount = ?, category = ?, date = ?, description = ?
+                WHERE id = ?
+                """,
+                (record_type, amount, category, date, description, record_id)
+            )
+            conn.commit()
+            success = cursor.rowcount > 0
+            conn.close()
+            return success
+        except Exception as e:
+            print(f"update 發生錯誤: {e}")
+            traceback.print_exc()
+            return False
 
     @staticmethod
     def delete(record_id):
         """刪除特定 ID 的收支紀錄"""
-        conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM records WHERE id = ?", (record_id,))
-        conn.commit()
-        success = cursor.rowcount > 0
-        conn.close()
-        return success
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM records WHERE id = ?", (record_id,))
+            conn.commit()
+            success = cursor.rowcount > 0
+            conn.close()
+            return success
+        except Exception as e:
+            print(f"delete 發生錯誤: {e}")
+            traceback.print_exc()
+            return False
