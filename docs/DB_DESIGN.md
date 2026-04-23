@@ -1,46 +1,48 @@
-# 資料庫設計文件 (Database Design)
+# 資料庫設計文件 (DB Design)
 
-本文件依據 PRD 與系統架構文件，定義任務管理系統的資料庫結構、實體關聯圖 (ER 圖) 以及詳細欄位說明。
+## 1. ER 圖（實體關係圖）
 
-## 1. 實體關係圖 (ER Map)
-
-我們主要的核心實體為 `tasks` (任務)。由於本應用為單一使用者的無登入輕量級系統，無需設計 `users` 等其他複雜表單，所有動作皆圍繞 `tasks` 進行。
+本系統為個人記帳簿，初期功能較單純，所有的收支紀錄統一存放在一張 `records` 資料表中。
 
 ```mermaid
 erDiagram
-  TASK {
-    INTEGER id PK
-    TEXT title
-    TEXT status
-    TEXT due_date
-    DATETIME created_at
-  }
+    RECORD {
+        INTEGER id PK "主鍵，自動遞增"
+        TEXT type "類型：income(收入) 或 expense(支出)"
+        REAL amount "金額"
+        TEXT category "分類 (例如：飲食、交通、薪資)"
+        TEXT description "額外備註說明"
+        TEXT date "消費日期 (YYYY-MM-DD)"
+        TEXT created_at "系統建檔時間 (ISO 8601)"
+    }
 ```
 
 ## 2. 資料表詳細說明
 
-### `tasks` (任務表)
+**資料表名稱：`records` (收支紀錄表)**
 
-用於儲存使用者的待辦事項與相關狀態。
+用於儲存所有的收入與支出明細，後續計算餘額或是繪製圓餅圖都會從這張表撈取資料。
 
-| 欄位名稱 | 型別 | 鍵值 | 必填 | 預設值 | 描述 |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **`id`** | INTEGER | PK | 是 | (Auto Increment) | 任務的唯一識別碼 |
-| **`title`** | TEXT | - | 是 | - | 任務名稱或標題，為使用者輸入的主要內容 |
-| **`status`** | TEXT | - | 是 | `'pending'` | 任務狀態。預設為 `'pending'` (未完成)。設定完成改為 `'completed'` |
-| **`due_date`** | TEXT | - | 否 | `NULL` | 任務截止日期，存放 ISO 格式（如 `YYYY-MM-DD`）字串 |
-| **`created_at`** | DATETIME | - | 是 | `CURRENT_TIMESTAMP` | 該筆任務建立的系統時間 |
+| 欄位名稱 | 型別 | 必填 | 說明 |
+| :--- | :--- | :---: | :--- |
+| `id` | INTEGER | 是 | Primary Key, 自動遞增的唯一識別碼 |
+| `type` | TEXT | 是 | 收支類型，限制為 `income` 或 `expense` |
+| `amount` | REAL | 是 | 交易金額 (可支援小數點的數值型別) |
+| `category` | TEXT | 是 | 支出/收入的分類，例如：飲食、交通、薪水等 |
+| `description` | TEXT | 否 | 額外的備註說明 (允許留空) |
+| `date` | TEXT | 是 | 該筆交易的日期（格式建議：YYYY-MM-DD） |
+| `created_at` | TEXT | 是 | 系統記錄建立的時間戳記，預設為當前時間 |
 
 ## 3. SQL 建表語法
 
-> 附註：實際的 SQL 語法會存放在專案底下的 `database/schema.sql`，並於應用程式初始化時使用。
+完整的 SQLite 建表語法已儲存於 `database/schema.sql`。
 
-```sql
-CREATE TABLE IF NOT EXISTS tasks (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending',
-    due_date TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-```
+## 4. Python Model 程式碼
+
+處理 SQLite 連線與 CRUD (增刪改查) 的邏輯程式碼，已實作並儲存於 `app/models/record.py`，其中包含：
+- `create()`: 新增一筆紀錄
+- `get_all()`: 取得所有紀錄 (依日期排序)
+- `get_by_id()`: 根據 ID 查詢單筆紀錄
+- `update()`: 更新特定紀錄
+- `delete()`: 刪除特定紀錄
+- `init_db()`: 執行 `schema.sql` 來初始化建立資料表

@@ -1,1 +1,2 @@
-# 空白檔案以標記為 Python 套件
+# 讓 models 資料夾成為一個 Python Package
+from .record import RecordModel
